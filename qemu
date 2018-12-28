@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# qemu - Shall wrapper for simplifying QEMU.
+
+set -e
+
+usage() {
+	echo "usage: qemu -d <disk> [-c <cdrom>, -m <memory>]"
+	exit 0
+}
+
+if [ $# -eq 0 ]; then
+	usage
+fi
+
+if [ -z "$QEMU_DIR_DISK" ]; then
+	echo "variable \$QEMU_DIR_DISK not set"
+	exit 1
+fi
+
+CDROM=""
+DISK=""
+MEMORY="512M"
+
+while getopts ":c:d:m:" o; do
+	case "$o" in
+		c)
+			CDROM="-cdrom $QEMU_DIR_ISO/$OPTARG"
+			;;
+		d)
+			DISK="$OPTARG"
+			;;
+		m)
+			MEMORY="$OPTARG"
+			;;
+		*)
+			usage
+	esac
+done
+
+shift $((OPTIND - 1))
+
+if [ ! -z "$CDROM" ]; then
+	if [ -z "$QEMU_DIR_ISO" ]; then
+		echo "variable \$QEMU_DIR_ISO not set"
+		exit 1
+	fi
+fi
+
+qemu-system-x86_64 \
+	-daemonize \
+	-enable-kvm \
+	-sdl \
+	-m $MEMORY \
+	-nic user,model=virtio \
+	$CDROM \
+	-drive file=$QEMU_DIR_DISK/$DISK,media=disk,if=virtio \
+	"$@"
