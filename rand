@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# rand - Generate a random alphanumeric string of the given length
+
+LEN="32"
+
+if [ ! -z "$1" ]; then
+	LEN="$1"
+fi
+
+cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w "$LEN" | head -n 1
