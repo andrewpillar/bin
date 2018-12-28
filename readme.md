@@ -1,3 +1,3 @@
 # bin
 
-Useful shell scripts. To install simply run, and add to `$PATH`.
+Useful shell scripts. To install, simply clone and add to `$PATH`.
