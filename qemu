@@ -47,12 +47,15 @@ if [ ! -z "$CDROM" ]; then
 	fi
 fi
 
+echo "qemu-system-x86_64 -daemonize -enable-kvm -sdl -m $MEMORY -net nic,model=virtio -net user $CDROM -drive file=$QEMU_DIR_DISK/$DISK,media=disk,if=virtio $@"
+
 qemu-system-x86_64 \
 	-daemonize \
 	-enable-kvm \
 	-sdl \
 	-m $MEMORY \
-	-nic user,model=virtio \
+	-net nic,model=virtio \
+	-net user \
 	$CDROM \
 	-drive file=$QEMU_DIR_DISK/$DISK,media=disk,if=virtio \
 	"$@"
