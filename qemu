@@ -54,7 +54,6 @@ qemu-system-x86_64 \
 	-enable-kvm \
 	-sdl \
 	-m $MEMORY \
-	-nic user,model=virtio \
 	$CDROM \
 	-drive file=$QEMU_DIR_DISK/$DISK,media=disk,if=virtio \
 	"$@"
