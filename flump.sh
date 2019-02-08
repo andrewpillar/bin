@@ -15,7 +15,9 @@ if [ -z "$FLUMP_HOST" ]; then
 	exit 1
 fi
 
-curl -H "Accept: text/plain" \
-	-H "Authorization: $FLUMP_TOKEN" \
-	-F "file=@${1}" \
-	"$FLUMP_HOST"
+for f in "$@"; do
+	curl -H "Accept: text/plain" \
+		-H "Authorization: $FLUMP_TOKEN" \
+		-F "file=@${f}" \
+		"$FLUMP_HOST"
+done
