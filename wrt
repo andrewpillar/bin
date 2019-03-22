@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ ! -z "$1" ]; then
+	urxvt -geometry 100x70 -e vim -c ":set colorcolumn=0" "$1"
+else
+	urxvt -geometry 100x70 -e vim -c ":set colorcolumn=0"
+fi
