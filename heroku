@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ ! -f /usr/share/words/adjs ]; then
+	>&2 printf "missing adjs file\n"
+fi
+
+if [ ! -f /usr/share/words/nouns ]; then
+	>&2 printf "missing nouns file\n"
+fi
+
+ADJ_MAX=$(wc -l /usr/share/words/adjs | awk '{ print $1 }')
+NOUN_MAX=$(wc -l /usr/share/words/nouns | awk '{ print $1 }')
+
+AWK_SCRIPT="BEGIN { srand(); print int(min + rand() * (max - min + 1)) }"
+
+ADJ_LINE=$(awk -v min=1 -v max=$ADJ_MAX "$AWK_SCRIPT" /usr/share/words/adjs)
+NOUN_LINE=$(awk -v min=1 -v max=$NOUN_MAX "$AWK_SCRIPT" /usr/share/words/nouns)
+
+ADJ=$(sed "$ADJ_LINE!d" /usr/share/words/adjs)
+NOUN=$(sed "$NOUN_LINE!d" /usr/share/words/nouns)
+
+printf "%s-%s\n" "$ADJ" "$NOUN"
