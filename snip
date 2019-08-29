@@ -1,0 +1,98 @@
+#!/bin/sh
+
+DIR="$HOME/.local/share/snips"
+
+if [ ! -d "$DIR" ]; then
+	mkdir -p "$DIR"
+fi
+
+usage() {
+	>&2 printf "usage: snip [add <name> <file>|cat <name...>|rm <name...>|ls]\n"
+	exit 1
+}
+
+argv0=$(basename "$0")
+cmd="$1"
+
+if [ -z "$cmd" ]; then
+	usage
+fi
+
+add_snip() (
+	name="$1"
+	file="$2"
+
+	if [ -z "$file" ]; then
+		file=$(mktemp)
+
+		printf "terminate input with EOF\n"
+
+		read -d EOF -r input
+
+		echo "$input" > "$file"
+	fi
+
+	if [ -d "$file" ]; then
+		>&2 printf "%s: snippets cannot be a directory\n" "$argv0"
+		exit 1
+	fi
+
+	if [ ! -f "$file" ]; then
+		>&2 printf "%s: file does not exist: %s\n" "$argv0" "$file"
+		exit 1
+	fi
+
+	cp "$file" "$DIR"/"$name"
+)
+
+cat_snip() (
+	code=0
+
+	for f in $@; do
+		if [ ! -f "$DIR"/"$f" ]; then
+			code=1
+			>&2 printf "%s: snippet does not exist: %s\n" "$argv0" "$f"
+			continue
+		fi
+
+		cat "$DIR"/"$f"
+	done
+
+	exit $code
+)
+
+rm_snip() (
+	code=0
+
+	for f in $@; do
+		if [ ! -f "$DIR"/"$f" ]; then
+			code=1
+			>&2 printf "%s: snippet does not exist: %s\n" "$argv0" "$f"
+			continue
+		fi
+
+		rm "$DIR"/"$f"
+	done
+
+	exit $code
+)
+
+shift 1
+
+case "$cmd" in
+	"add")
+		add_snip $@
+		;;
+	"cat")
+		cat_snip $@
+		;;
+	"rm")
+		rm_snip $@
+		;;
+	"ls")
+		ls "$DIR"
+		;;
+	*)
+		usage
+		;;
+esac
