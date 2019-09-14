@@ -1,0 +1,25 @@
+#!/bin/sh
+# Apply GitHub PRs with 'git-am'. This takes the patch URL as its first
+# argument, each subsequent argument is passed to the 'git am' command.
+
+if [ -z "$1" ]; then
+	>&2 printf "usage: gh-am [patch url] [flags...]\n"
+	exit 1
+fi
+
+for b in curl git; do
+	if ! hash "$b"; then
+		>&2 printf "%s: requires %s\n" "$(basename $0)" "$b"
+		exit 1
+	fi
+done
+
+patch=$(mktemp)
+
+curl -s "$1" > "$patch"
+
+shift 1
+
+git am "$@" < "$patch"
+
+rm "$patch"
