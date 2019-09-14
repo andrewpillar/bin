@@ -50,7 +50,7 @@ add_snip() (
 cat_snip() (
 	code=0
 
-	for f in $@; do
+	for f in "$@"; do
 		if [ ! -f "$DIR"/"$f" ]; then
 			code=1
 			>&2 printf "%s: snippet does not exist: %s\n" "$argv0" "$f"
@@ -66,7 +66,7 @@ cat_snip() (
 rm_snip() (
 	code=0
 
-	for f in $@; do
+	for f in "$@"; do
 		if [ ! -f "$DIR"/"$f" ]; then
 			code=1
 			>&2 printf "%s: snippet does not exist: %s\n" "$argv0" "$f"
@@ -83,13 +83,13 @@ shift 1
 
 case "$cmd" in
 	"add")
-		add_snip $@
+		add_snip "$@"
 		;;
 	"cat")
-		cat_snip $@
+		cat_snip "$@"
 		;;
 	"rm")
-		rm_snip $@
+		rm_snip "$@"
 		;;
 	"ls")
 		ls "$DIR"
