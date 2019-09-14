@@ -1,24 +1,25 @@
 #!/bin/sh
-# Apply GitHub PRs with 'git-am'. This takes the patch URL as its first
+# Apply GitHub PRs with 'git-am'. This takes the pull-request ID as its first
 # argument, each subsequent argument is passed to the 'git am' command.
 
 argv0="$(basename $0)"
 
 if [ -z "$1" ]; then
-	>&2 printf "usage: gh-am [patch url] [flags...]\n"
+	>&2 printf "usage: gh-am [pull-request id] [flags...]\n"
 	exit 1
 fi
 
-for b in curl git; do
+for b in awk curl git; do
 	if ! hash "$b"; then
 		>&2 printf "%s: requires %s\n" "$argv0" "$b"
 		exit 1
 	fi
 done
 
+remote=$(git remote -v | grep fetch | awk '{ print $2 }')
 patch=$(mktemp)
 
-if ! curl -s -f "$1" > "$patch"; then
+if ! curl -Lsf "$remote"/pull/"$1".patch > "$patch"; then
 	>&2 printf "%s: failed to curl patch url\n" "$argv0"
 	exit 1
 fi
