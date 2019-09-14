@@ -25,11 +25,13 @@ add_snip() (
 	if [ -z "$file" ]; then
 		file=$(mktemp)
 
-		printf "terminate input with EOF\n"
+		while read -r line; do
+			if [ "$line" = "EOF" ]; then
+				break
+			fi
 
-		read -d EOF -r input
-
-		echo "$input" > "$file"
+			echo "$line" >> "$file"
+		done
 	fi
 
 	if [ -d "$file" ]; then
