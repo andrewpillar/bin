@@ -1,0 +1,16 @@
+#!/bin/sh
+# Squash input streams by removing new-lines, and tabs.
+
+squash() (
+	echo "$1" | tr -d '\n' | tr -d '\t'
+)
+
+if [ $# -eq 0 ]; then
+	squash "$(cat)"
+
+	exit 0
+fi
+
+for f in "$@"; do
+	squash "$(cat "$f")"
+done
