@@ -2,7 +2,7 @@
 # Apply GitHub PRs with 'git-am'. This takes the pull-request ID as its first
 # argument, each subsequent argument is passed to the 'git am' command.
 
-argv0="$(basename $0)"
+argv0="$(basename "$0")"
 
 if [ -z "$1" ]; then
 	>&2 printf "usage: gh-am [pull-request id] [flags...]\n"
@@ -16,7 +16,13 @@ for b in awk curl git; do
 	fi
 done
 
-remote=$(git remote -v | grep fetch | awk '{ print $2 }')
+remote=$(git config --get remote.http.url)
+
+if [ $? -ne 0 ]; then
+	>&2 printf "%s: http remote not set\n" "$argv0"
+	exit 1
+fi
+
 patch=$(mktemp)
 
 if ! curl -Lsf "$remote"/pull/"$1".patch > "$patch"; then
