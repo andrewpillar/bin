@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Utility for reading plain text of websites
+
+curl -s -H "Accept: text/plain" "$@"
