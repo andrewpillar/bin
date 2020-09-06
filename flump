@@ -1,0 +1,35 @@
+#!/bin/sh
+
+if ! hash jq; then
+	>&2 printf "missing jq\n"
+	exit 1
+fi
+
+tmp="$(mktemp)"
+
+trap "rm -f $tmp" EXIT
+
+if [ -z "$FLUMP_TOKEN" ]; then
+	>&2 printf "FLUMP_TOKEN not set\n"
+	exit 1
+fi
+
+if [ -z "$FLUMP_HOST" ]; then
+	>&2 printf "FLUMP_HOST not set\n"
+	exit 1
+fi
+
+file="$1"
+
+if [ $# -eq 0 ]; then
+	file="/dev/stdin"
+fi
+
+code="$(curl -s -X POST -H "Authorization: Bearer $FLUMP_TOKEN" --data-binary @"$file" "$FLUMP_HOST" -w "%{http_code}" -o "$tmp")"
+
+if [ "$code" != "201" ]; then
+	>&2 jq -r '.message' "$tmp"
+	exit 1
+fi
+
+jq -r '.url' "$tmp"
