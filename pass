@@ -1,0 +1,194 @@
+#!/bin/sh
+
+argv0="$(basename "$0")"
+
+if ! hash age; then
+	>&2 printf "%s: could not fine age binary\n" "$argv0"
+	exit 1
+fi
+
+AGEDIR="$HOME/.age"
+AGEKEY="$AGEDIR/id"
+PASSDIR="$HOME/.agepass"
+
+storedir="$PASSDIR/store"
+
+_initialized() {
+	if [ ! -d "$PASSDIR" ]; then
+		>&2 printf "%s: not initialized\n" "$argv0"
+		exit 1
+	fi
+}
+
+_check() {
+	if [ ! -f "$storedir/$1" ]; then
+		>&2 printf "%s: password not found\n" "$argv0"
+		exit 1
+	fi
+}
+
+_pubkey() (
+	grep "public key: " "$(cat "$PASSDIR/key")" | awk '{ print $4 }'
+)
+
+_privkey() (
+	cat "$PASSDIR/key"
+)
+
+_usage() {
+	printf "Usage:\n"
+	printf "    pass <command> <args...>\n\n"
+	printf "Commands:\n"
+	printf "    get <name>    Get the given password\n"
+	printf "    init          Initialize a new password store\n"
+	printf "    rm <names...> Remove the password(s)\n"
+	printf "    rot <name>    Rotate the given password\n"
+	printf "    set <name>    Add a password with the alias\n"
+}
+
+init_cmd() (
+	if [ -d "$PASSDIR" ]; then
+		>&2 printf "%s: already initialized\n" "$argv0"
+		exit 1
+	fi
+
+	mkdir -p "$storedir"
+
+	echo "$AGEKEY" > "$PASSDIR"/key
+)
+
+_read() {
+	exec < /dev/tty
+
+	settings=$(stty -g)
+	trap 'stty "$settings"' EXIT INT TERM
+
+	stty -echo
+
+	IFS= read -r line
+
+	echo > /dev/tty
+
+	printf "%s" "$line"
+}
+
+set_cmd() (
+	_initialized
+
+	name="$1"
+
+	if [ -z "$name" ]; then
+		>&2 printf "usage: pass set <name>\n"
+		exit 1
+	fi
+
+	printf "Enter password: "
+
+	password=$(_read)
+
+	file="$storedir/$name"
+
+	mkdir -p "$storedir/$(dirname "$name")"
+	echo "$password" > "$file"
+
+	age -r "$(_pubkey)" "$file" > "$file.age"
+
+	mv "$file.age" "$file"
+)
+
+get_cmd() (
+	_initialized
+
+	name="$1"
+
+	if [ -z "$name" ]; then
+		>&2 printf "usage: pass get <name>\n"
+		exit 1
+	fi
+
+	_check "$name"
+
+	age -d -i "$(_privkey)" "$storedir/$name"
+)
+
+ls_cmd() (
+	_initialized
+
+	for f in $(find "$storedir" -type f); do
+		echo "$f" | sed "s!$storedir!!" | tail -c +2
+	done
+)
+
+rm_cmd() (
+	_initialized
+
+	if [ $# -eq 0 ]; then
+		>&2 printf "usage: pass rm <names...>\n"
+		exit 1
+	fi
+
+	for name in "$@"; do
+		rm -f "$storedir/$name"
+	done
+)
+
+rot_cmd() (
+	_initialized
+
+	name="$1"
+
+	if [ -z "$name" ]; then
+		>&2 printf "usage: pass rot <name>\n"
+		exit 1
+	fi
+
+	_check "$name"
+
+	file="$storedir/$name"
+	curr=$(age -d -i "$(_privkey)" "$file")
+
+	printf "New password: "
+
+	password=$(_read)
+
+	if [ "$password" = "$curr" ]; then
+		>&2 printf "%s: new password cannot match current\n" "$argv0"
+		exit 1
+	fi
+
+	echo "$password" > "$file"
+
+	age -r "$(_pubkey)" "$file" > "$file.age"
+
+	mv "$file.age" "$file"
+)
+
+cmd="$1"
+
+if [ ! -z "$cmd" ]; then
+	shift 1
+fi
+
+case "$cmd" in
+	set)
+		set_cmd "$@"
+		;;
+	get)
+		get_cmd "$@"
+		;;
+	init)
+		init_cmd
+		;;
+	ls)
+		ls_cmd
+		;;
+	rm)
+		rm_cmd "$@"
+		;;
+	rot)
+		rot_cmd "$@"
+		;;
+	*)
+		_usage
+		;;
+esac
