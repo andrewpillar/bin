@@ -1,22 +1,27 @@
-#!/bin/sh
+#!/usr/bin/env python
+import random
+import sys
 
-if [ ! -f /usr/share/words/adjs ]; then
-	>&2 printf "missing adjs file\n"
-fi
+def randline(fname):
+	f = open(fname, "r")
 
-if [ ! -f /usr/share/words/nouns ]; then
-	>&2 printf "missing nouns file\n"
-fi
+	lines = f.readlines()
 
-ADJ_MAX=$(wc -l /usr/share/words/adjs | awk '{ print $1 }')
-NOUN_MAX=$(wc -l /usr/share/words/nouns | awk '{ print $1 }')
+	f.close()
 
-AWK_SCRIPT="BEGIN { srand(); print int(min + rand() * (max - min + 1)) }"
+	line = lines[random.randint(0, len(lines) - 1)]
 
-ADJ_LINE=$(awk -v min=1 -v max=$ADJ_MAX "$AWK_SCRIPT" /usr/share/words/adjs)
-NOUN_LINE=$(awk -v min=1 -v max=$NOUN_MAX "$AWK_SCRIPT" /usr/share/words/nouns)
+	return line[:len(line)-1]
 
-ADJ=$(sed "$ADJ_LINE!d" /usr/share/words/adjs)
-NOUN=$(sed "$NOUN_LINE!d" /usr/share/words/nouns)
+def main():
+	try:
+		adj = randline("/usr/share/words/adjs")
+		noun = randline("/usr/share/words/nouns")
+	except Exception as e:
+		sys.stderr.write("{0}\n".format(e))
+		sys.exit(1)
 
-printf "%s-%s\n" "$ADJ" "$NOUN"
+	sys.stdout.write("{0}-{1}\n".format(adj, noun))
+
+if __name__ == "__main__":
+	main()
