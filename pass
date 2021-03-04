@@ -39,7 +39,9 @@ _usage() {
 	printf "Usage:\n"
 	printf "    pass <command> <args...>\n\n"
 	printf "Commands:\n"
+	printf "    export <key>  Export the password store\n"
 	printf "    get <name>    Get the given password\n"
+	printf "    import        Import an exported password store\n"
 	printf "    init          Initialize a new password store\n"
 	printf "    rm <names...> Remove the password(s)\n"
 	printf "    rot <name>    Rotate the given password\n"
@@ -125,6 +127,69 @@ ls_cmd() (
 	done
 )
 
+export_cmd() (
+	_initialized
+
+	key="$1"
+
+	if [ -z "$key" ]; then
+		>&2 printf "usage: pass export <key>\n"
+		exit 1
+	fi
+
+	tmp="$(mktemp -d)"
+
+	for f in $(find "$storedir" -type f); do
+		dir="$(echo "$tmp/$(dirname "$f")" | sed "s!$HOME/!!")"
+
+		mkdir -p "$dir"
+
+		age -d -i "$(_privkey)" "$f" | age -r "$key" > "$dir"/"$(basename "$f")"
+	done
+
+	dir="$(pwd)"
+	cd "$tmp"
+
+	tar -czf agepass.tar.gz .agepass
+	mv agepass.tar.gz "$dir"
+
+	cd - > /dev/null
+	rm -rf "$tmp"
+
+	printf "Password store exported to %s using key %s\n" "agepass.tar.gz" "$key"
+	printf "Import this using the same key with 'pass import'\n"
+)
+
+import_cmd() (
+	store="agepass.tar.gz"
+
+	if [ ! -f "$store" ]; then
+		>&2 printf "%s: cannot find exported password store\n" "$argv0"
+		exit 1
+	fi
+
+	if [ -d "$PASSDIR" ]; then
+		>&2 printf "Detected pre-existing password store at %s\n" "$PASSDIR"
+		>&2 printf "The 'pass import' command should be used for importing new password stores\n"
+		exit 1
+	fi
+
+	mkdir -p "$storedir"
+
+	tmp="$(mktemp -d)"
+	mv "$store" "$tmp"
+
+	cd "$tmp"
+
+	tar -xzf "$store"
+	mv .agepass/store "$storedir"
+	echo "$AGEKEY" > "$PASSDIR"/key
+
+	cd - > /dev/null
+
+	rm -rf "$tmp"
+)
+
 rm_cmd() (
 	_initialized
 
@@ -184,6 +249,12 @@ case "$cmd" in
 		;;
 	init)
 		init_cmd
+		;;
+	export)
+		export_cmd "$@"
+		;;
+	import)
+		import_cmd
 		;;
 	ls)
 		ls_cmd
