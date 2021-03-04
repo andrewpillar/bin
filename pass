@@ -87,8 +87,14 @@ set_cmd() (
 	password=$(_read)
 
 	file="$storedir/$name"
+	dir="$storedir/$(dirname "$name")"
 
-	mkdir -p "$storedir/$(dirname "$name")"
+	if [ -f "$dir" ]; then
+		>&2 printf "%s: password already exists for %s\n" "$argv0" "$(dirname "$name")"
+		exit 1
+	fi
+
+	mkdir -p "$dir"
 	echo "$password" > "$file"
 
 	age -r "$(_pubkey)" "$file" > "$file.age"
