@@ -8,4 +8,10 @@ if [ ! -z "$1" ]; then
 	LEN="$1"
 fi
 
-tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w "$LEN" | head -n 1
+rand="$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w "$LEN" | head -n 1)"
+
+if [ -t 1 ]; then
+	echo "$rand"
+else
+	echo -n "$rand"
+fi

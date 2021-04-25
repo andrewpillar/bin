@@ -116,7 +116,13 @@ get_cmd() (
 
 	_check "$name"
 
-	age -d -i "$(_privkey)" "$storedir/$name"
+	pass="$(age -d -i "$(_privkey)" "$storedir/$name")"
+
+	if [ -t 1 ]; then
+		echo "$pass"
+	else
+		echo -n "$pass"
+	fi
 )
 
 ls_cmd() (
