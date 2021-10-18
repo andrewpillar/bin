@@ -1,0 +1,23 @@
+#!/bin/sh
+
+file="envfile"
+argv0="$(basename "$0")"
+
+[ $# -eq 0 ] && {
+	>&2 printf "usage: %s <cmd>\n"
+	exit 1
+}
+
+
+[ ! -f "$file" ] && {
+	>&2 printf "%s: could not find %s\n" "$argv0" "$file"
+	exit 1
+}
+
+for line in $(grep -vE "^#" "$file"); do
+	export "$line"
+done
+
+bin="$1"
+
+"$bin" "$@"
