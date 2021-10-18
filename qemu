@@ -56,4 +56,5 @@ qemu-system-x86_64 \
 	-m $MEMORY \
 	$CDROM \
 	-drive file=$QEMU_DIR_DISK/$DISK,media=disk,if=virtio \
+	-net nic,model=virtio \
 	"$@"
