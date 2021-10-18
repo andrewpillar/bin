@@ -180,7 +180,7 @@ import_cmd() (
 		exit 1
 	fi
 
-	mkdir -p "$storedir"
+	mkdir -p "$PASSDIR"
 
 	tmp="$(mktemp -d)"
 	mv "$store" "$tmp"
