@@ -20,4 +20,6 @@ done
 
 bin="$1"
 
-"$bin" "$@"
+shift 1
+
+"$bin" $@
