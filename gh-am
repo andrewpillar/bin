@@ -16,12 +16,13 @@ for b in awk curl git; do
 	fi
 done
 
-if ! git config --get remote.http.url; then
-	>&2 printf "%s: http remote not set\n" "$argv0"
+remote=$(git config --get remote.http.url)
+
+if [ "$remote" = "" ]; then
+	>&2 printf "%s: remote.http.url not set\n" "$argv0"
 	exit 1
 fi
 
-remote=$(git config --get remote.http.url)
 patch=$(mktemp)
 
 if ! curl -Lsf "$remote"/pull/"$1".patch > "$patch"; then
