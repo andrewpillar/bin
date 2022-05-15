@@ -5,7 +5,7 @@
 argv0="$(basename "$0")"
 
 if [ -z "$1" ]; then
-	>&2 printf "usage: gh-am [pull-request id] [flags...]\n"
+	>&2 printf "usage: %s <pull-request id> [flags...]\n" "$argv0"
 	exit 1
 fi
 
@@ -25,6 +25,8 @@ fi
 
 patch=$(mktemp)
 
+trap "rm -f $patch" EXIT
+
 if ! curl -Lsf "$remote"/pull/"$1".patch > "$patch"; then
 	>&2 printf "%s: failed to curl patch url\n" "$argv0"
 	exit 1
@@ -33,5 +35,3 @@ fi
 shift 1
 
 git am "$@" < "$patch"
-
-rm "$patch"
