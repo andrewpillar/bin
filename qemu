@@ -12,10 +12,10 @@ set -x
 
 qemu-system-x86_64 -daemonize \
 	-enable-kvm \
-	-sdl \
+	-display sdl \
 	-m 8192 \
 	-drive file="$file",media=disk,if=virtio \
 	-net nic,model=virtio \
+	-net user,hostfwd=tcp:127.0.0.1:2222-:22 \
 	-smp 2 \
-	-net user,hostfwd=tcp::2222-:22 \
 	"$@"
