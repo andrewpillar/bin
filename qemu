@@ -1,21 +1,81 @@
 #!/bin/sh
 
-[ $# -eq 0 ] && {
-	>&2 printf "usage: %s <image>\n" "$(basename "$0")"
-	exit 1
-}
+argv0="$(basename "$0")"
 
-file="$1"
-shift 1
+if [ -z "$QCOW2PATH" ]; then
+	>&2 printf "%s: QCOW2PATH not set\n" "$argv0"
+	exit 1
+fi
+
+if [ $# -eq 0 ]; then
+	>&2 printf "usage: %s <options> [image]\n" "$argv0"
+	exit 1
+fi
+
+hostfwd="hostfwd=tcp:127.0.0.1:2222-:22"
+
+opts=""
+
+for arg; do
+	opts="$opts $arg"
+done
+
+n="$(echo -n "$arg" | wc -c)"
+
+opts="$(echo "$opts" | sed "s/^ //" | sed -E "s/.{$n}\$//")"
+file="$arg"
+
+cpus=1
+mem="$(awk '/MemAvailable/{ print ($2 / 2) / 1024 }' /proc/meminfo | cut -d . -f 1)"
+
+hostfwd="hostfwd=tcp:127.0.0.1:2222-:22"
+
+if [ -f provision.sh ]; then
+	hostfwd="$hostfwd,$(awk '/# portfwd: /{
+		host = $3
+		guest = $4
+
+		if (guest == "") {
+			guest = host
+		}
+
+		printf "hostfwd=tcp:127.0.0.1:%s-:%s,", host, guest
+}' provision.sh | sed 's/,$//g')"
+
+	cpus2="$(grep -E "^# cpus:" provision.sh | cut -d : -f 2 | tr -d ' ')"
+
+	if [ ! -z "$cpus2" ]; then
+		cpus="$cpus2"
+	fi
+
+	mem2="$(grep -E "^# memory:" provision.sh | cut -d : -f 2 | tr -d ' ')"
+
+	if [ ! -z "$mem2" ]; then
+		mem="$mem2"
+	fi
+fi
 
 set -x
 
 qemu-system-x86_64 -daemonize \
 	-enable-kvm \
 	-display sdl \
-	-m 8192 \
-	-drive file="$file",media=disk,if=virtio \
+	-m "$mem" \
+	-drive file="$QCOW2PATH/$file",media=disk,if=virtio \
 	-net nic,model=virtio \
-	-net user,hostfwd=tcp:127.0.0.1:2222-:22 \
-	-smp 2 \
-	"$@"
+	-net user,"$hostfwd" \
+	-smp "$cpus" \
+	$opts
+
+set +x
+
+if [ -f provision.sh ]; then
+	while true; do
+		if ssh -q -p 2222 -o ConnectTimeout=5 root@localhost exit; then
+			break
+		fi
+	done
+
+	scp -q -P 2222 provision.sh root@localhost:
+	ssh -q -p 2222 -o ConnectTimeout=15 root@localhost ./provision.sh
+fi
