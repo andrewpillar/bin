@@ -58,7 +58,7 @@ fi
 set -x
 
 qemu-system-x86_64 -daemonize \
-	-enable-kvm \
+	-machine accel=kvm \
 	-display sdl \
 	-m "$mem" \
 	-drive file="$QCOW2PATH/$file",media=disk,if=virtio \
