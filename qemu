@@ -14,16 +14,10 @@ fi
 
 hostfwd="hostfwd=tcp:127.0.0.1:2222-:22"
 
-opts=""
+file="$1"
+shift 1
 
-for arg; do
-	opts="$opts $arg"
-done
-
-n="$(echo -n "$arg" | wc -c)"
-
-opts="$(echo "$opts" | sed "s/^ //" | sed -E "s/.{$n}\$//")"
-file="$arg"
+opts="$@"
 
 cpus=1
 mem="$(awk '/MemAvailable/{ print ($2 / 2) / 1024 }' /proc/meminfo | cut -d . -f 1)"
